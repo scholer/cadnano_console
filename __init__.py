@@ -16,6 +16,7 @@
 ##
 # pylint: disable-msg=C0103,C0301,C0302,R0201,R0902,R0904,R0913,W0142,W0201,W0221,W0402
 
+import os.path, sys
 import cadnano, util
 util.qtWrapImport('QtGui', globals(), ['QIcon', 'QPixmap', 'QAction'])
 
@@ -33,7 +34,7 @@ class ConsoleHandler(object):
         # or otherwise re-configuring the exisitng resource hierarchy.
         # PS: If this is not reliable, consider using
         #     icon_path = os.getcwd() + "/plugins/cadnano_console/console_32x32.png"
-        icon_path = "plugins/cadnano_console/console_32x32.png"
+        icon_path = os.path.join(os.path.dirname(__file__), "console_32x32.png")
         icon10.addPixmap(QPixmap(icon_path), QIcon.Normal, QIcon.Off)
         self.actionOpenConsole = QAction(window)
         self.actionOpenConsole.setIcon(icon10)
@@ -55,6 +56,9 @@ class ConsoleHandler(object):
         Notice: locals are not updated upon loading a new design. This may cause issues.
         """
         print "cadnano_console.actionOpenConsoleSlot() invoked (DEBUG)"
+        if "-i" in sys.argv:
+            print "Cadnano was invoked in interactive mode (with '-i' argument) -- opening another console will only cause problems, aborting..."
+            return
         # MyInterpreter is the interpreter widget/window.
         win = self.consoleWindow = MyInterpreter(None)
         self.consoleWindow.show()
@@ -80,6 +84,10 @@ class ConsoleHandler(object):
             self.Api = CadnanoAPI()
         api = self.Api
         """ Probably add something at this point?"""
+
+        # Edit: Indeed, adding static objects to the interpreter's locals is not immensely useful,
+        # since these might change after the console is opened.
+        # Do it the original "interactive" way - adding getter methods, a(), d(), p(), vh(), etc.
         terp.updateInterpreterLocals(api, "api")
         terp.updateInterpreterLocals(doc, "rs_document")
         terp.updateInterpreterLocals(app, "rs_app")
@@ -147,6 +155,7 @@ to print a text string. Do this now if you want more help, by typing
         terp.write("Welcome to the cadnano2 console plugin!\n")
         terp.write("Use the dir() command to navigate. Use dir(variable) (unquoted) to see a variable's items.\n")
         terp.write("Type more_help() to see more help -- and see how you can invoke a function.\n")
+        terp.write("Note: This console should NOT be used if running cadnano in interactive mode (specifying '-i' as argument to main.py).\n")
 
 
 
